@@ -24,6 +24,7 @@ build/
 .env
 .env.local
 .env.*
+!.env.example
 
 certs/
 !certs/.gitkeep
