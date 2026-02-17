@@ -5,6 +5,9 @@ from datetime import timedelta
 from .. import models, schemas, auth
 from ..database import SessionLocal
 import re
+from ..limiter import limiter
+from ..config import RATE_LIMIT_AUTH
+from fastapi import Request
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -16,7 +19,13 @@ def get_db():
         db.close()
 
 @router.post("/register", response_model=schemas.UserResponse)
-def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
+@limiter.limit(RATE_LIMIT_AUTH)
+def register(
+    request: Request, 
+    user: schemas.UserCreate, 
+    db: Session = Depends(get_db)
+    ):
+
     db_user = db.query(models.User).filter(models.User.username == user.username).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Username already registered")
@@ -40,7 +49,13 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return new_user
 
 @router.post("/token", response_model=schemas.Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+@limiter.limit(RATE_LIMIT_AUTH)
+def login(
+    request: Request, 
+    form_data: OAuth2PasswordRequestForm = Depends(), 
+    db: Session = Depends(get_db)
+    ):
+    
     user = db.query(models.User).filter(models.User.username == form_data.username).first()
     if not user or not auth.verify_password(form_data.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Incorrect username or password")

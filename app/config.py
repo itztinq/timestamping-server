@@ -18,3 +18,8 @@ AUTH_SECRET = os.getenv("AUTH_SECRET", "change-this-in-production")
 
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DB_FILE}")
 PORT = int(os.getenv("PORT", 8443))
+
+RATE_LIMIT_AUTH = os.getenv("RATE_LIMIT_AUTH", "5/minute")
+RATE_LIMIT_UPLOAD = os.getenv("RATE_LIMIT_UPLOAD", "10/hour")
+RATE_LIMIT_DELETE = os.getenv("RATE_LIMIT_DELETE", "10/hour")
+RATE_LIMIT_GENERAL = os.getenv("RATE_LIMIT_GENERAL", "30/minute")
