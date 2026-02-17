@@ -4,6 +4,7 @@ from typing import List
 from .. import models, schemas, crypto, auth
 from ..database import SessionLocal
 from datetime import datetime
+from ..schemas import TimestampWithUserResponse
 
 router = APIRouter(prefix="/api/timestamps", tags=["timestamps"])
 
@@ -14,7 +15,7 @@ def get_db():
     finally:
         db.close()
 
-@router.post("/upload", response_model=schemas.TimestampResponse)
+@router.post("/upload", response_model=schemas.TimestampWithUserResponse)
 async def upload_document(
     file: UploadFile = File(...), 
     db: Session = Depends(get_db),
@@ -27,7 +28,16 @@ async def upload_document(
         models.TimestampRecord.file_hash == file_hash
     ).first()
     if existing:
-        return existing
+        owner = db.query(models.User).filter(models.User.id == existing.user_id).first()
+        return TimestampWithUserResponse(
+            id=existing.id,
+            filename=existing.filename,
+            file_hash=existing.file_hash,
+            signature=existing.signature,
+            timestamp=existing.timestamp,
+            user_id=existing.user_id,
+            username=owner.username if owner else "unknown"
+        )
     
     now = datetime.utcnow()
     signature = crypto.sign_hash(file_hash, now)
@@ -43,27 +53,51 @@ async def upload_document(
     db.commit()
     db.refresh(record)
     
-    return record
+    return TimestampWithUserResponse(
+        id=record.id,
+        filename=record.filename,
+        file_hash=record.file_hash,
+        signature=record.signature,
+        timestamp=record.timestamp,
+        user_id=record.user_id,
+        username=current_user.username
+    )
 
 @router.post("/verify")
 async def verify_document(file: UploadFile = File(...), db: Session = Depends(get_db)):
     contents = await file.read()
     file_hash = crypto.compute_file_hash(contents)
     
-    record = db.query(models.TimestampRecord).filter(
+    result = db.query(
+        models.TimestampRecord,
+        models.User.username
+    ).join(
+        models.User, models.TimestampRecord.user_id == models.User.id
+    ).filter(
         models.TimestampRecord.file_hash == file_hash
     ).first()
-    if not record:
+    
+    if not result:
         raise HTTPException(status_code=404, detail="Document not found in archive")
     
+    record, username = result
     is_valid = crypto.verify_signature(record.file_hash, record.timestamp, record.signature)
+    
     return {
         "verified": is_valid,
         "original_name": record.filename,
-        "record": schemas.TimestampResponse.from_orm(record)
+        "record": TimestampWithUserResponse(
+            id=record.id,
+            filename=record.filename,
+            file_hash=record.file_hash,
+            signature=record.signature,
+            timestamp=record.timestamp,
+            user_id=record.user_id,
+            username=username
+        )
     }
 
-@router.get("/", response_model=List[schemas.TimestampResponse])
+@router.get("/", response_model=List[schemas.TimestampWithUserResponse])
 async def list_timestamps(
     skip: int = 0, 
     limit: int = 100, 
@@ -71,12 +105,40 @@ async def list_timestamps(
     current_user: models.User = Depends(auth.get_current_active_user)
 ):
     if current_user.role == "admin":
-        records = db.query(models.TimestampRecord).offset(skip).limit(limit).all()
+        records = db.query(
+            models.TimestampRecord,
+            models.User.username
+        ).join(
+            models.User, models.TimestampRecord.user_id == models.User.id
+        ).offset(skip).limit(limit).all()
+        
+        return [
+            TimestampWithUserResponse(
+                id=r.id,
+                filename=r.filename,
+                file_hash=r.file_hash,
+                signature=r.signature,
+                timestamp=r.timestamp,
+                user_id=r.user_id,
+                username=username
+            ) for r, username in records
+        ]
     else:
         records = db.query(models.TimestampRecord).filter(
             models.TimestampRecord.user_id == current_user.id
         ).offset(skip).limit(limit).all()
-    return records
+        
+        return [
+            TimestampWithUserResponse(
+                id=r.id,
+                filename=r.filename,
+                file_hash=r.file_hash,
+                signature=r.signature,
+                timestamp=r.timestamp,
+                user_id=r.user_id,
+                username=current_user.username
+            ) for r in records
+        ]
 
 @router.get("/cert")
 async def get_certificate():

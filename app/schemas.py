@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
 class TimestampResponse(BaseModel):
     id: int
@@ -12,6 +12,9 @@ class TimestampResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class TimestampWithUserResponse(TimestampResponse):
+    username: str
 
 class VerifyRequest(BaseModel):
     file_hash: str
