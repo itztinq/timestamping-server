@@ -5,6 +5,9 @@ from .. import models, schemas, crypto, auth
 from ..database import SessionLocal
 from datetime import datetime
 from ..schemas import TimestampWithUserResponse
+from ..limiter import limiter
+from ..config import RATE_LIMIT_UPLOAD, RATE_LIMIT_DELETE, RATE_LIMIT_GENERAL
+from fastapi import Request
 
 router = APIRouter(prefix="/api/timestamps", tags=["timestamps"])
 
@@ -16,11 +19,14 @@ def get_db():
         db.close()
 
 @router.post("/upload", response_model=schemas.TimestampWithUserResponse)
+@limiter.limit(RATE_LIMIT_UPLOAD)
 async def upload_document(
+    request: Request,
     file: UploadFile = File(...), 
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_active_user)
-):
+    ):
+    
     contents = await file.read()
     file_hash = crypto.compute_file_hash(contents)
     
@@ -64,7 +70,13 @@ async def upload_document(
     )
 
 @router.post("/verify")
-async def verify_document(file: UploadFile = File(...), db: Session = Depends(get_db)):
+@limiter.limit(RATE_LIMIT_GENERAL)
+async def verify_document(
+    request: Request, 
+    file: UploadFile = File(...), 
+    db: Session = Depends(get_db)
+    ):
+    
     contents = await file.read()
     file_hash = crypto.compute_file_hash(contents)
     
@@ -98,12 +110,15 @@ async def verify_document(file: UploadFile = File(...), db: Session = Depends(ge
     }
 
 @router.get("/", response_model=List[schemas.TimestampWithUserResponse])
+@limiter.limit(RATE_LIMIT_GENERAL)
 async def list_timestamps(
+    request: Request,
     skip: int = 0, 
     limit: int = 100, 
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_active_user)
-):
+    ):
+
     if current_user.role == "admin":
         records = db.query(
             models.TimestampRecord,
@@ -147,11 +162,14 @@ async def get_certificate():
     return {"certificate": cert_pem.decode()}
 
 @router.delete("/{record_id}")
+@limiter.limit(RATE_LIMIT_DELETE)
 async def delete_timestamp(
+    request: Request,
     record_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_active_user)
-):
+    ):
+
     record = db.query(models.TimestampRecord).filter(models.TimestampRecord.id == record_id).first()
     if not record:
         raise HTTPException(status_code=404, detail="Record not found")

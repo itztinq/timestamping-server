@@ -5,10 +5,14 @@ from . import models, auth, crypto
 from .config import (
     ADMIN_USERNAME,
     ADMIN_PASSWORD,
+    RATE_LIMIT_GENERAL,
 )
 from .routers import timestamp, auth as auth_router
 import datetime
 import logging
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
+from .limiter import limiter
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -93,12 +97,17 @@ async def lifespan(app: FastAPI):
 
     logger.info("Shutting down application...")
 
+limiter._default_limits = [RATE_LIMIT_GENERAL]
+
 app = FastAPI(
     title="Timestamping Server",
     version="1.0.0",
     lifespan=lifespan,
     description="A secure timestamping server with user authentication and document archiving."
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.include_router(timestamp.router)
 app.include_router(auth_router.router)
