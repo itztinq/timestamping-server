@@ -47,15 +47,11 @@ logs/
 *.pid.lock
 
 # PKI (use generate_pki.py to recreate)
-pki/**/*.pem
-pki/**/*.key
-pki/**/*.p12
-pki/**/*.pfx
-pki/**/private/
-pki/**/newcerts/
-pki/**/index.txt*
-pki/**/serial*
-pki/**/crlnumber*
+pki/**
+!pki/
+!pki/*/
+!pki/*/*/
+!pki/**/openssl.cnf
 
 # Frontend
 frontend/node_modules/
