@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-PKI Setup Script for Timestamping Server
-Generates: Root CA -> Intermediate CA -> Server Cert -> Client Cert (.p12)
+PKI Generator for Timestamping Server
+Generates Certificates and Keys into the existing directory structure.
 """
 
 import datetime
@@ -16,24 +16,23 @@ from cryptography.hazmat.primitives.serialization import pkcs12
 PKI_DIR = Path("pki")
 
 CONFIG = {
-    "country":          "MK",
-    "state":            "Skopje",
-    "org":              "FINKI Timestamping Server",
-    "root_cn":          "FINKI Root CA",
-    "intermediate_cn":  "FINKI Intermediate CA",
-    "server_cn":        "localhost",
-    "client_cn":        "timestamping-client",
-    "p12_password":     b"changeit",
-    "root_days":        3650,
+    "country": "MK",
+    "state": "Skopje",
+    "org": "FINKI Timestamping Server",
+    "root_cn": "FINKI Root CA",
+    "intermediate_cn": "FINKI Intermediate CA",
+    "server_cn": "localhost",
+    "client_cn": "timestamping-client",
+    "p12_password": b"changeit",
+    "root_days": 3650,
     "intermediate_days": 1825,
-    "leaf_days":        375,
+    "leaf_days": 375,
 }
 
 def generate_key(size=2048):
     return rsa.generate_private_key(public_exponent=65537, key_size=size)
 
 def save_key(key, path: Path):
-    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.TraditionalOpenSSL,
@@ -42,7 +41,6 @@ def save_key(key, path: Path):
     print(f"  [+] Key saved:  {path}")
 
 def save_cert(cert, path: Path):
-    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(cert.public_bytes(serialization.Encoding.PEM))
     print(f"  [+] Cert saved: {path}")
 
@@ -121,7 +119,6 @@ def create_server_cert(int_key, int_cert):
         .add_extension(x509.ExtendedKeyUsage([ExtendedKeyUsageOID.SERVER_AUTH]), critical=False)
         .add_extension(x509.SubjectAlternativeName([
             x509.DNSName("localhost"),
-            x509.DNSName("timestamping.local"),
             x509.IPAddress(ipaddress.IPv4Address("127.0.0.1")),
         ]), critical=False)
         .add_extension(x509.SubjectKeyIdentifier.from_public_key(key.public_key()), critical=False)
@@ -167,11 +164,11 @@ def create_client_cert(int_key, int_cert):
 
 if __name__ == "__main__":
     if (PKI_DIR / "server" / "server.key.pem").exists():
-        if input("PKI exists. Overwrite? (y/N): ").strip().lower() != 'y':
+        if input("\n[!] PKI already exists. Overwrite? (y/N): ").strip().lower() != 'y':
             exit("Aborted.")
             
     root_key, root_cert = create_root_ca()
     int_key, int_cert = create_intermediate_ca(root_key, root_cert)
     create_server_cert(int_key, int_cert)
     create_client_cert(int_key, int_cert)
-    print("\n PKI generation complete!")
+    print("\nPKI generation complete!")

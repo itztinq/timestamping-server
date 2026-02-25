@@ -52,6 +52,7 @@ pki/**
 !pki/*/
 !pki/*/*/
 !pki/**/openssl.cnf
+!pki/**/.gitkeep
 
 # Frontend
 frontend/node_modules/
@@ -59,3 +60,5 @@ frontend/dist/
 frontend/.env
 frontend/npm-debug.log*
 frontend/yarn-debug.log*
+
+!**/.gitkeep
