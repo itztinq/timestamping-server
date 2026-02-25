@@ -1,3 +1,4 @@
+# Python
 venv/
 env/
 ENV/
@@ -17,37 +18,48 @@ __pycache__/
 dist/
 build/
 
+# Database
 *.db
 *.sqlite3
 *.sqlite
 
+# Environment
 .env
 .env.local
 .env.*
 !.env.example
 
-certs/
-!certs/.gitkeep
-
+# Editor
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
+# OS
 .DS_Store
 Thumbs.db
 
+# Logs
 logs/
 *.log
-
 *.pid
 *.pid.lock
 
-# Ignore private keys
-pki/**/private/*.key
+# PKI (use generate_pki.py to recreate)
+pki/**/*.pem
+pki/**/*.key
+pki/**/*.p12
+pki/**/*.pfx
+pki/**/private/
+pki/**/newcerts/
+pki/**/index.txt*
+pki/**/serial*
+pki/**/crlnumber*
 
 # Frontend
 frontend/node_modules/
 frontend/dist/
 frontend/.env
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
