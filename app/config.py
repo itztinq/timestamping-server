@@ -8,8 +8,8 @@ BASE_DIR = Path(__file__).parent.parent
 CERTS_DIR = BASE_DIR / "certs"
 DB_FILE = BASE_DIR / "timestamps.db"
 
-PRIVATE_KEY_PATH = CERTS_DIR / "server.key"
-CERTIFICATE_PATH = CERTS_DIR / "server.crt"
+PRIVATE_KEY_PATH = BASE_DIR / "pki" / "server" / "server.key.pem"
+CERTIFICATE_PATH = BASE_DIR / "pki" / "server" / "server.cert.pem"
 
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "Admin123!")
@@ -23,3 +23,10 @@ RATE_LIMIT_AUTH = os.getenv("RATE_LIMIT_AUTH", "5/minute")
 RATE_LIMIT_UPLOAD = os.getenv("RATE_LIMIT_UPLOAD", "10/hour")
 RATE_LIMIT_DELETE = os.getenv("RATE_LIMIT_DELETE", "10/hour")
 RATE_LIMIT_GENERAL = os.getenv("RATE_LIMIT_GENERAL", "30/minute")
+
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
+EMAIL_USERNAME = os.getenv("EMAIL_USERNAME", "")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")
+EMAIL_FROM = os.getenv("EMAIL_FROM", "noreply@timestamping.com")
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").lower() == "true"

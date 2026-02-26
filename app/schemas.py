@@ -1,6 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 class TimestampResponse(BaseModel):
     id: int
@@ -24,11 +24,14 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    email: EmailStr
 
 class UserResponse(UserBase):
     id: int
     role: str
     created_at: datetime
+    email: str
+    is_2fa_verified: bool
 
     class Config:
         from_attributes = True
@@ -40,3 +43,17 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     username: Optional[str] = None
     role: Optional[str] = None
+
+class OTPRequest(BaseModel):
+    code: str
+
+class TempTokenResponse(BaseModel):
+    message: str
+    temp_token: str
+
+class LoginResponse(BaseModel):
+    access_token: Optional[str] = None
+    token_type: Optional[str] = None
+    requires_2fa: bool
+    temp_token: Optional[str] = None
+    message: Optional[str] = None

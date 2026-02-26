@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     models.Base.metadata.create_all(bind=engine)
     logger.info("Database tables created/verified.")
-    
+
     db = SessionLocal()
     try:
         user_count = db.query(models.User).count()
@@ -33,17 +33,19 @@ async def lifespan(app: FastAPI):
             admin = models.User(
                 username=ADMIN_USERNAME,
                 password_hash=hashed_admin,
-                role="admin"
+                role="admin",
+                email="admin@example.com",  # додадено
+                is_2fa_verified=True  # за да не го попречува тестирањето (може да се смени)
             )
             db.add(admin)
             db.flush()
             logger.info(f"Admin '{ADMIN_USERNAME}' created.")
-            
+
             test_users = [
-                {"username": "alice", "password": "Alice123!", "role": "user"},
-                {"username": "bob", "password": "Bob1234!", "role": "user"},
-                {"username": "tina", "password": "Tina123!", "role": "user"},
-                {"username": "tea", "password": "Tea1234!", "role": "user"},
+                {"username": "alice", "password": "Alice123!", "role": "user", "email": "alice@example.com"},
+                {"username": "bob", "password": "Bob1234!", "role": "user", "email": "bob@example.com"},
+                {"username": "tina", "password": "Tina123!", "role": "user", "email": "tina@example.com"},
+                {"username": "tea", "password": "Tea1234!", "role": "user", "email": "tea@example.com"},
             ]
             created_users = [admin]
             for u in test_users:
@@ -51,13 +53,15 @@ async def lifespan(app: FastAPI):
                 user = models.User(
                     username=u["username"],
                     password_hash=hashed,
-                    role=u["role"]
+                    role=u["role"],
+                    email=u["email"],
+                    is_2fa_verified=True  # верификувани за тестирање
                 )
                 db.add(user)
                 created_users.append(user)
             db.commit()
             logger.info(f"Test users created: {[u.username for u in created_users[1:]]}")
-            
+
             users = [u for u in created_users if u.role == "user"]
             if users:
                 test_files = [
@@ -98,6 +102,7 @@ async def lifespan(app: FastAPI):
 
     logger.info("Shutting down application...")
 
+
 limiter._default_limits = [RATE_LIMIT_GENERAL]
 
 app = FastAPI(
@@ -126,6 +131,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.include_router(timestamp.router)
 app.include_router(auth_router.router)
+
 
 @app.get("/")
 def root():
