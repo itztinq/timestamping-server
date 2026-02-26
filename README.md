@@ -5,6 +5,7 @@ A secure, full-stack application for timestamping and archiving documents. Users
 ## Features
 
 - **User Authentication**: Register and login with JWT tokens. Passwords are hashed using bcrypt.
+- **Two-Factor Authentication (2FA)**: **Mandatory for all users**. After login, a one-time code is sent to the user's email. The code must be entered to complete the login process.
 - **Role-based Access**: Regular users see only their own documents and admins can view all.
 - **Document Timestamping**: Upload a document, compute its SHA-256 hash, and securely sign it with the server's RSA private key combined with the current UTC timestamp.
 - **Verification**: Anyone can verify a document by uploading it, the server checks if the hash exists and the signature is valid.
@@ -18,6 +19,7 @@ A secure, full-stack application for timestamping and archiving documents. Users
 - **Frontend**: React.js with Vite
 - **Database**: SQLite with SQLAlchemy ORM
 - **Authentication**: JWT (python-jose) + bcrypt (passlib)
+- **2FA**: Email OTP via SMTP 
 - **Cryptography**: RSA signatures (cryptography library)
 - **Security**: mTLS with OpenSSL-compatible certificates
 - **Configuration**: python-dotenv
@@ -55,7 +57,7 @@ A secure, full-stack application for timestamping and archiving documents. Users
    ```bash
    cp .env.example .env
    ```
-   > Generate a secure AUTH_SECRET (e.g., openssl rand -base64 32) and set it in .env.
+   > Generate a secure AUTH_SECRET (e.g., openssl rand -base64 32) and set it in .env. Important: For 2FA to work, you must configure email settings (see Email Configuration below).
 7. Install Client Certificate (Browser mTLS)
    Before starting the client, you must install the generated client certificate in your OS/Browser to authenticate with the server:
    - Navigate to `pki/client/`
