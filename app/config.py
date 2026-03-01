@@ -13,6 +13,7 @@ CERTIFICATE_PATH = BASE_DIR / "pki" / "server" / "server.cert.pem"
 
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "Admin123!")
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@localhost")
 
 AUTH_SECRET = os.getenv("AUTH_SECRET", "change-this-in-production")
 
