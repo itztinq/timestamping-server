@@ -5,6 +5,7 @@ from . import models, auth, crypto
 from .config import (
     ADMIN_USERNAME,
     ADMIN_PASSWORD,
+    ADMIN_EMAIL,
     RATE_LIMIT_GENERAL,
 )
 from .routers import timestamp, auth as auth_router
@@ -34,8 +35,8 @@ async def lifespan(app: FastAPI):
                 username=ADMIN_USERNAME,
                 password_hash=hashed_admin,
                 role="admin",
-                email="admin@example.com",  # додадено
-                is_2fa_verified=True  # за да не го попречува тестирањето (може да се смени)
+                email=ADMIN_EMAIL,
+                is_2fa_verified=True
             )
             db.add(admin)
             db.flush()
@@ -55,7 +56,7 @@ async def lifespan(app: FastAPI):
                     password_hash=hashed,
                     role=u["role"],
                     email=u["email"],
-                    is_2fa_verified=True  # верификувани за тестирање
+                    is_2fa_verified=True
                 )
                 db.add(user)
                 created_users.append(user)
